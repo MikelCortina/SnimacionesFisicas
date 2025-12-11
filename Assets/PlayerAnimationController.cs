@@ -36,6 +36,25 @@ public class PlayerAnimationController : MonoBehaviour
             groundCheckTransform = groundObj.transform;
         }
     }
+    private void FixedUpdate()
+    {
+        float h = Input.GetAxisRaw("Horizontal");
+        float v = Input.GetAxisRaw("Vertical");
+        Vector3 input = new Vector3(h, 0, v).normalized;
+
+        if (input.magnitude > 0.1f)
+        {
+            // Rotación hacia la dirección de movimiento
+            Quaternion targetRot = Quaternion.LookRotation(input, Vector3.up);
+            transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, 10f * Time.deltaTime);
+
+            // Velocidad según caminar o correr
+            float currentSpeed = Input.GetKey(KeyCode.LeftShift) ? runSpeed : walkSpeed;
+
+            Vector3 move = transform.forward * currentSpeed * Time.fixedDeltaTime;
+            rb.MovePosition(rb.position + move);
+        }
+    }
 
     void Update()
     {
