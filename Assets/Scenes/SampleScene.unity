@@ -894,11 +894,6 @@ Animator:
   m_CorrespondingSourceObject: {fileID: 100643590582753880, guid: 71358633aa004d7439f3bec36d1074fb, type: 3}
   m_PrefabInstance: {fileID: 8331255530216198630}
   m_PrefabAsset: {fileID: 0}
---- !u!4 &699442505 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 3694320225810849774, guid: 71358633aa004d7439f3bec36d1074fb, type: 3}
-  m_PrefabInstance: {fileID: 8331255530216198630}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &764968423 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 8579717726991422797, guid: 71358633aa004d7439f3bec36d1074fb, type: 3}
@@ -1348,6 +1343,11 @@ CapsuleCollider:
   m_Height: 0.2768704
   m_Direction: 1
   m_Center: {x: 0, y: 0.1384352, z: 0}
+--- !u!4 &1313638817 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 7873128781515278507, guid: 71358633aa004d7439f3bec36d1074fb, type: 3}
+  m_PrefabInstance: {fileID: 8331255530216198630}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1598007684 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 4308648853372839439, guid: 71358633aa004d7439f3bec36d1074fb, type: 3}
@@ -1799,9 +1799,29 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 37969098}
     - target: {fileID: 8834734034227995137, guid: 71358633aa004d7439f3bec36d1074fb, type: 3}
+      propertyPath: rightHandTarget
+      value: 
+      objectReference: {fileID: 37969098}
+    - target: {fileID: 8834734034227995137, guid: 71358633aa004d7439f3bec36d1074fb, type: 3}
+      propertyPath: rightHandWeight
+      value: 0.606
+      objectReference: {fileID: 0}
+    - target: {fileID: 8834734034227995137, guid: 71358633aa004d7439f3bec36d1074fb, type: 3}
+      propertyPath: groundCheckRadius
+      value: -0.19
+      objectReference: {fileID: 0}
+    - target: {fileID: 8834734034227995137, guid: 71358633aa004d7439f3bec36d1074fb, type: 3}
+      propertyPath: groundCheckDistance
+      value: 0.4
+      objectReference: {fileID: 0}
+    - target: {fileID: 8834734034227995137, guid: 71358633aa004d7439f3bec36d1074fb, type: 3}
       propertyPath: groundCheckTransform
       value: 
-      objectReference: {fileID: 699442505}
+      objectReference: {fileID: 1313638817}
+    - target: {fileID: 8834734034227995137, guid: 71358633aa004d7439f3bec36d1074fb, type: 3}
+      propertyPath: footGroundMask.m_Bits
+      value: 8
+      objectReference: {fileID: 0}
     - target: {fileID: 8834734034227995137, guid: 71358633aa004d7439f3bec36d1074fb, type: 3}
       propertyPath: ragdollColliders.Array.size
       value: 11
