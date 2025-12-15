@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 [RequireComponent(typeof(Animator))]
 [RequireComponent(typeof(Rigidbody))]
@@ -34,6 +34,9 @@ public class PlayerAnimationController : MonoBehaviour
     public bool useIK = true;
     public Transform lookAtTarget;
 
+    [Header("IK Toggle")]
+    public KeyCode toggleIKKey = KeyCode.O;
+
     [Header("Hand IK")]
     public Transform rightHandTarget;
     [Range(0, 1)] public float rightHandWeight = 1f;
@@ -60,10 +63,10 @@ public class PlayerAnimationController : MonoBehaviour
 
         if (groundCheckTransform == null)
         {
-            GameObject groundObj = new GameObject("GroundCheck");
-            groundObj.transform.SetParent(transform);
-            groundCheckTransform = groundObj.transform;
-            groundCheckTransform.localPosition = new Vector3(0, 0.1f, 0);
+            GameObject g = new GameObject("GroundCheck");
+            g.transform.SetParent(transform);
+            g.transform.localPosition = new Vector3(0, 0.1f, 0);
+            groundCheckTransform = g.transform;
         }
 
         foreach (Rigidbody r in ragdollRigidbodies) r.isKinematic = true;
@@ -78,14 +81,13 @@ public class PlayerAnimationController : MonoBehaviour
 
         if (input.magnitude > 0.1f)
         {
-            Quaternion targetRot = Quaternion.LookRotation(input, Vector3.up);
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, 10f * Time.deltaTime);
+            Quaternion rot = Quaternion.LookRotation(input);
+            transform.rotation = Quaternion.Slerp(transform.rotation, rot, 10f * Time.deltaTime);
 
             float baseSpeed = Input.GetKey(KeyCode.LeftShift) ? runSpeed : walkSpeed;
-            float currentSpeed = isCrouched ? baseSpeed * crouchSpeedMultiplier : baseSpeed;
+            float speed = isCrouched ? baseSpeed * crouchSpeedMultiplier : baseSpeed;
 
-            Vector3 move = transform.forward * currentSpeed * Time.fixedDeltaTime;
-            rb.MovePosition(rb.position + move);
+            rb.MovePosition(rb.position + transform.forward * speed * Time.fixedDeltaTime);
         }
     }
 
@@ -96,14 +98,14 @@ public class PlayerAnimationController : MonoBehaviour
         Vector3 input = new Vector3(h, 0, v).normalized;
         bool running = Input.GetKey(KeyCode.LeftShift);
 
-        // === CROUCH TOGGLE ===
+        // CROUCH
         if (Input.GetKeyDown(crouchKey))
             isCrouched = !isCrouched;
 
         anim.SetBool("Crouch", isCrouched);
         anim.SetBool("Crouch2", isCrouched);
 
-        // Collider crouch
+        // COLLIDER
         if (isCrouched)
         {
             playerCollider.height = crouchColliderHeight;
@@ -115,67 +117,40 @@ public class PlayerAnimationController : MonoBehaviour
             playerCollider.center = originalColliderCenter;
         }
 
-        // Locomotion
+        // LOCOMOTION
         float speedParam = 0f;
         if (input.magnitude > 0.1f)
-        {
-            if (isCrouched) speedParam = 0.5f;
-            else speedParam = running ? 1f : 0.5f;
-        }
+            speedParam = isCrouched ? 0.5f : (running ? 1f : 0.5f);
+
         anim.SetFloat("Speed", speedParam, 0.1f, Time.deltaTime);
 
-        bool grounded = IsGrounded();
-
-        // Jump
-        if (Input.GetKeyDown(KeyCode.Space) && grounded && !isCrouched)
+        // JUMP
+        if (Input.GetKeyDown(KeyCode.Space) && IsGrounded() && !isCrouched)
         {
             anim.SetTrigger("Jump");
             rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
         }
 
-        // Attack
+        // ATTACK
         if (Input.GetMouseButtonDown(0))
             anim.SetTrigger("Attack");
 
-        // Ragdoll
+        // TOGGLE IK 🔘
+        if (Input.GetKeyDown(toggleIKKey))
+        {
+            useIK = !useIK;
+            Debug.Log(useIK ? "IK ACTIVADO" : "IK DESACTIVADO");
+        }
+
+        // RAGDOLL
         if (Input.GetKeyDown(KeyCode.K)) EnableRagdoll();
         if (Input.GetKeyDown(KeyCode.L)) DisableRagdoll();
-
-        // Toggle IK
-        if (Input.GetKeyDown(KeyCode.I)) useIK = !useIK;
     }
 
     bool IsGrounded()
     {
-        Collider[] colliders = Physics.OverlapSphere(groundCheckTransform.position, groundCheckRadius, groundMask);
-        foreach (Collider col in colliders)
-            if (col != playerCollider && !col.isTrigger)
-                return true;
-
-        if (Physics.Raycast(transform.position + Vector3.up * 0.1f,
-            Vector3.down, out RaycastHit hit, groundCheckDistance, groundMask))
-            return true;
-
-        return false;
-    }
-
-    public void EnableRagdoll()
-    {
-        anim.enabled = false;
-        foreach (Rigidbody r in ragdollRigidbodies) r.isKinematic = false;
-        foreach (Collider c in ragdollColliders) c.enabled = true;
-    }
-
-    public void DisableRagdoll()
-    {
-        transform.position = hipsBone.position;
-        transform.rotation = hipsBone.rotation;
-
-        foreach (Rigidbody r in ragdollRigidbodies) r.isKinematic = true;
-        foreach (Collider c in ragdollColliders) c.enabled = false;
-
-        anim.enabled = true;
-        anim.Play("Idle", 0, 0f);
+        return Physics.Raycast(transform.position + Vector3.up * 0.1f,
+            Vector3.down, groundCheckDistance, groundMask);
     }
 
     void OnAnimatorIK(int layerIndex)
@@ -189,19 +164,13 @@ public class PlayerAnimationController : MonoBehaviour
             anim.SetLookAtPosition(lookAtTarget.position);
         }
 
-        // RIGHT HAND IK
+        // HAND IK
         if (rightHandTarget != null)
         {
             anim.SetIKPositionWeight(AvatarIKGoal.RightHand, rightHandWeight);
             anim.SetIKRotationWeight(AvatarIKGoal.RightHand, rightHandWeight);
-
             anim.SetIKPosition(AvatarIKGoal.RightHand, rightHandTarget.position);
             anim.SetIKRotation(AvatarIKGoal.RightHand, rightHandTarget.rotation);
-        }
-        else
-        {
-            anim.SetIKPositionWeight(AvatarIKGoal.RightHand, 0f);
-            anim.SetIKRotationWeight(AvatarIKGoal.RightHand, 0f);
         }
 
         // FOOT IK
@@ -217,27 +186,32 @@ public class PlayerAnimationController : MonoBehaviour
         anim.SetIKPositionWeight(foot, 1f);
         anim.SetIKRotationWeight(foot, 1f);
 
-        Vector3 footPos = anim.GetIKPosition(foot);
-        Ray ray = new Ray(footPos + Vector3.up, Vector3.down);
-
-        if (Physics.Raycast(ray, out RaycastHit hit, footRayDistance, footGroundMask))
+        Vector3 pos = anim.GetIKPosition(foot);
+        if (Physics.Raycast(pos + Vector3.up, Vector3.down,
+            out RaycastHit hit, footRayDistance, footGroundMask))
         {
-            Vector3 targetPos = hit.point;
-            targetPos.y += footOffsetY;
-
-            anim.SetIKPosition(foot, targetPos);
-
-            Quaternion rot = Quaternion.LookRotation(transform.forward, hit.normal);
-            anim.SetIKRotation(foot, rot);
+            anim.SetIKPosition(foot, hit.point + Vector3.up * footOffsetY);
+            anim.SetIKRotation(foot,
+                Quaternion.LookRotation(transform.forward, hit.normal));
         }
     }
 
-    private void OnDrawGizmosSelected()
+    public void EnableRagdoll()
     {
-        if (groundCheckTransform != null)
-        {
-            Gizmos.color = IsGrounded() ? Color.green : Color.red;
-            Gizmos.DrawSphere(groundCheckTransform.position, groundCheckRadius);
-        }
+        anim.enabled = false;
+        foreach (var r in ragdollRigidbodies) r.isKinematic = false;
+        foreach (var c in ragdollColliders) c.enabled = true;
+    }
+
+    public void DisableRagdoll()
+    {
+        transform.position = hipsBone.position;
+        transform.rotation = hipsBone.rotation;
+
+        foreach (var r in ragdollRigidbodies) r.isKinematic = true;
+        foreach (var c in ragdollColliders) c.enabled = false;
+
+        anim.enabled = true;
+        anim.Play("Idle", 0, 0);
     }
 }
